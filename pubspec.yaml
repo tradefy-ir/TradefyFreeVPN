@@ -1,0 +1,38 @@
+name: tradefy_vpn
+description: TradefyVPN
+publish_to: "none"
+version: 1.0.8+9
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_v2ray_client: ^3.5.0
+  http: ^1.5.0
+  shared_preferences: ^2.5.3
+  provider: ^6.1.5
+  cached_network_image: ^3.4.1
+  video_player: ^2.10.0
+  google_fonts: ^6.3.2
+  intl: ^0.20.2
+  collection: ^1.19.1
+
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - images/startApp.png
+    - images/AppLogo.png
+    - images/banner.png
+    - images/banner_vertical.png

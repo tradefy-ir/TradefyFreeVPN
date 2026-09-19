@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <!-- Opaque and matching the splash background so Android 12+
+         does not fall back to the circular launcher / logo icon. -->
+    <path
+        android:fillColor="#020B18"
+        android:pathData="M0,0h288v288h-288z" />
+</vector>
