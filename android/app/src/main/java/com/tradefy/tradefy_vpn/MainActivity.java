@@ -10,7 +10,6 @@ import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import dev.amirzr.flutter_v2ray_client.v2ray.V2rayController;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
@@ -49,6 +48,15 @@ public class MainActivity extends FlutterActivity {
             } else if ("consumePendingDisconnect".equals(call.method)) {
                 result.success(pendingNotificationDisconnect);
                 pendingNotificationDisconnect = false;
+            } else if ("resetVpnRuntime".equals(call.method)) {
+                VpnRuntime.reset(getApplicationContext());
+                result.success(true);
+            } else if ("showSessionExpiredNotification".equals(call.method)) {
+                SessionNotifier.showExpired(getApplicationContext());
+                result.success(true);
+            } else if ("cancelSessionExpiredNotification".equals(call.method)) {
+                SessionNotifier.cancel(getApplicationContext());
+                result.success(true);
             } else {
                 result.notImplemented();
             }
@@ -77,11 +85,7 @@ public class MainActivity extends FlutterActivity {
     private void stopVpnFromNotification() {
         Log.i(TAG, "Notification disconnect tapped, stopping Xray");
         pendingNotificationDisconnect = true;
-        try {
-            V2rayController.StopV2ray(getApplicationContext());
-        } catch (Throwable error) {
-            Log.w(TAG, "Could not stop Xray: " + error.getMessage());
-        }
+        VpnRuntime.reset(getApplicationContext());
         if (sessionChannel != null) {
             sessionChannel.invokeMethod("notificationDisconnect", null);
         }

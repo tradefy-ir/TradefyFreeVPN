@@ -282,12 +282,11 @@ class VpnController extends ChangeNotifier with WidgetsBindingObserver {
         notifyListeners();
         return false;
       }
-      await xray.start(
+      final tunUp = await xray.start(
         remark: node.displayName,
         configJson: node.configJson,
       );
-      final tunUp = await xray.waitUntilConnected();
-      if (!tunUp) {
+      if (!tunUp && !xray.isConnected) {
         await xray.stop();
         _userWantsConnection = false;
         phase = VpnPhase.ready;
@@ -326,7 +325,7 @@ class VpnController extends ChangeNotifier with WidgetsBindingObserver {
     sessionExpired = expired;
     phase = VpnPhase.ready;
     if (expired) {
-      errorMessage = 'جلسه یک‌ساعته به پایان رسید. برای اتصال دوباره وارد اپ شوید.';
+      await session.notifyExpired();
     }
     _disconnecting = false;
     notifyListeners();

@@ -43,13 +43,22 @@ class SessionService {
     _startedAt = await _cache.loadSessionStart();
   }
 
-  Future<void> start() async {
+    Future<void> start() async {
     _startedAt = DateTime.now();
     await _cache.saveSessionStart(_startedAt);
+    try {
+      await _channel.invokeMethod<void>('cancelSessionExpiredNotification');
+    } catch (_) {}
     try {
       await _channel.invokeMethod<void>('scheduleTimeout', <String, int>{
         'millis': AppConfig.sessionLimit.inMilliseconds,
       });
+    } catch (_) {}
+  }
+
+  Future<void> notifyExpired() async {
+    try {
+      await _channel.invokeMethod<void>('showSessionExpiredNotification');
     } catch (_) {}
   }
 

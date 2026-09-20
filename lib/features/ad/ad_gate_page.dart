@@ -12,26 +12,55 @@ class AdGatePage extends StatefulWidget {
   State<AdGatePage> createState() => _AdGatePageState();
 }
 
-class _AdGatePageState extends State<AdGatePage> {
+class _AdGatePageState extends State<AdGatePage> with WidgetsBindingObserver {
   late int _secondsLeft;
+  bool _finished = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _secondsLeft = widget.duration.inSeconds;
     _tick();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _cancelWatch();
+    }
+  }
+
   Future<void> _tick() async {
-    while (mounted && _secondsLeft > 0) {
+    while (mounted && !_finished && _secondsLeft > 0) {
       await Future<void>.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
+      if (!mounted || _finished) return;
       setState(() => _secondsLeft -= 1);
     }
-    if (mounted) Navigator.of(context).pop(true);
+    if (!mounted || _finished) return;
+    _close(watchedFully: true);
+  }
+
+  void _cancelWatch() {
+    _close(watchedFully: false);
+  }
+
+  void _close({required bool watchedFully}) {
+    if (_finished || !mounted) return;
+    _finished = true;
+    Navigator.of(context).pop(watchedFully);
   }
 
   Future<void> _openSite() async {
+    _cancelWatch();
     await launchUrl(
       Uri.parse(AppConfig.websiteUrl),
       mode: LaunchMode.externalApplication,
@@ -42,6 +71,9 @@ class _AdGatePageState extends State<AdGatePage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancelWatch();
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFF020B18),
         body: SafeArea(
@@ -68,6 +100,18 @@ class _AdGatePageState extends State<AdGatePage> {
                       child: Text('$_secondsLeft ثانیه'),
                     ),
                   ],
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(
+                  'لطفا این صفحه را نبندید تا اتصال برقرار شود.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppTheme.warning,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
+                  ),
                 ),
               ),
               Expanded(

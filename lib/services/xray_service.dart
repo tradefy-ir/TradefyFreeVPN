@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_v2ray_client/flutter_v2ray.dart';
 import 'package:tradefy_vpn/core/config/app_config.dart';
 import 'package:tradefy_vpn/core/utils/xray_config.dart';
 
 class XrayService {
+  static const _sessionChannel = MethodChannel('com.tradefy.tradefy_vpn/session');
+
   XrayService() {
     _client = V2ray(
       onStatusChanged: (status) {
@@ -81,16 +84,13 @@ class XrayService {
     return _client.requestPermission();
   }
 
-  Future<void> start({
+  Future<bool> start({
     required String remark,
     required String configJson,
   }) async {
     await _waitForIdleDelays();
-    _ignoreStatusUpdates = false;
-    try {
-      await _client.stopV2Ray();
-    } catch (_) {}
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+    await _tearDownNative();
+    final connected = waitUntilConnected();
     await _client.startV2Ray(
       remark: remark,
       config: applyVpnRuntimeSettings(configJson),
@@ -99,10 +99,11 @@ class XrayService {
       proxyOnly: false,
       notificationDisconnectButtonName: 'قطع اتصال',
     );
+    return await connected;
   }
 
   Future<bool> waitUntilConnected({
-    Duration timeout = const Duration(seconds: 8),
+    Duration timeout = const Duration(seconds: 15),
   }) async {
     if (isConnected) return true;
     final completer = Completer<bool>();
@@ -114,25 +115,45 @@ class XrayService {
 
     statusListenable.addListener(listener);
     try {
-      return await Future.any<bool>([
-        completer.future,
-        Future<bool>.delayed(timeout, () => isConnected),
-      ]);
+      if (isConnected) return true;
+      return await completer.future.timeout(
+        timeout,
+        onTimeout: () => isConnected,
+      );
     } finally {
       statusListenable.removeListener(listener);
     }
+  }
+
+  Future<void> _tearDownNative() async {
+    _ignoreStatusUpdates = true;
+    _markDisconnected();
+    try {
+      await _client.stopV2Ray();
+    } catch (_) {}
+    try {
+      await _sessionChannel.invokeMethod<void>('resetVpnRuntime');
+    } catch (_) {}
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    _markDisconnected();
+    _ignoreStatusUpdates = false;
+  }
+
+  void _markDisconnected() {
+    _status = V2RayStatus();
+    statusListenable.value = _status;
   }
 
   Future<void> stop() async {
     _ignoreStatusUpdates = true;
     try {
       await _client.stopV2Ray();
-    } finally {
-      _status = V2RayStatus();
-      statusListenable.value = _status;
-      Future<void>.delayed(const Duration(milliseconds: 800), () {
-        _ignoreStatusUpdates = false;
-      });
-    }
+    } catch (_) {}
+    try {
+      await _sessionChannel.invokeMethod<void>('resetVpnRuntime');
+    } catch (_) {}
+    _markDisconnected();
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    _ignoreStatusUpdates = false;
   }
 }
