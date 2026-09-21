@@ -26,5 +26,5 @@ class AppConfig {
 
   static const String assetStart = 'images/startApp.png';
   static const String assetLogo = 'images/AppLogo.png';
-  static const String assetBanner = 'images/banner_vertical.png';
+  static const String assetBanner = 'images/banner.png';
 }

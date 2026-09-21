@@ -1,7 +1,7 @@
 name: tradefy_vpn
 description: TradefyVPN
 publish_to: "none"
-version: 1.0.10+11
+version: 1.0.11+12
 
 environment:
   sdk: ^3.13.0
@@ -34,4 +34,3 @@ flutter:
     - images/startApp.png
     - images/AppLogo.png
     - images/banner.png
-    - images/banner_vertical.png
