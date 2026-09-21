@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   AppTheme._();
@@ -25,27 +24,28 @@ class AppTheme {
         surface: surface,
         error: danger,
       ),
-    );
-
-    final textTheme = GoogleFonts.vazirmatnTextTheme(base.textTheme).apply(
-      bodyColor: textPrimary,
-      displayColor: textPrimary,
+      fontFamily: 'sans-serif',
     );
 
     return base.copyWith(
-      textTheme: textTheme,
+      textTheme: base.textTheme.apply(
+        bodyColor: textPrimary,
+        displayColor: textPrimary,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: background,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: textTheme.titleLarge?.copyWith(
+        titleTextStyle: base.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           color: textPrimary,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: card,
-        contentTextStyle: textTheme.bodyMedium,
+        contentTextStyle: base.textTheme.bodyMedium?.copyWith(
+          color: textPrimary,
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );

@@ -9,23 +9,36 @@ class ServerList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<VpnController>();
-    final nodes = controller.visibleNodes;
+    final nodes = context.select<VpnController, List<VpnNode>>((c) => c.nodes);
+    final selectedId = context.select<VpnController, String?>(
+      (c) => c.selected?.id,
+    );
+    final connected = context.select<VpnController, bool>(
+      (c) => c.showAsConnected,
+    );
+    final controller = context.read<VpnController>();
+    final visible = [...nodes]..sort((a, b) {
+      final aPing = a.pingMs > 0 ? a.pingMs : 1 << 30;
+      final bPing = b.pingMs > 0 ? b.pingMs : 1 << 30;
+      final ping = aPing.compareTo(bPing);
+      if (ping != 0) return ping;
+      return a.indexInCountry.compareTo(b.indexInCountry);
+    });
 
-    if (nodes.isEmpty) {
+    if (visible.isEmpty) {
       return const Center(child: Text('سروری برای نمایش نیست'));
     }
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: nodes.length,
+      itemCount: visible.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final node = nodes[index];
+        final node = visible[index];
         return _NodeTile(
           node: node,
-          selected: node.id == controller.selected?.id,
-          enabled: !controller.showAsConnected,
+          selected: node.id == selectedId,
+          enabled: !connected,
           onTap: () => controller.selectNode(node),
         );
       },

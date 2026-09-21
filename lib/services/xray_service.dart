@@ -13,8 +13,11 @@ class XrayService {
     _client = V2ray(
       onStatusChanged: (status) {
         if (_ignoreStatusUpdates) return;
+        final stateChanged = status.state != _status.state;
         _status = status;
-        statusListenable.value = status;
+        if (stateChanged) {
+          statusListenable.value = status;
+        }
       },
     );
   }

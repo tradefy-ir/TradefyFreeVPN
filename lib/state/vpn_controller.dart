@@ -338,7 +338,9 @@ class VpnController extends ChangeNotifier with WidgetsBindingObserver {
         unawaited(disconnect(expired: true));
         return;
       }
-      notifyListeners();
+      if (showAsConnected) {
+        notifyListeners();
+      }
     });
   }
 
@@ -360,20 +362,22 @@ class VpnController extends ChangeNotifier with WidgetsBindingObserver {
     if (!_userWantsConnection) {
       if (phase == VpnPhase.connected) {
         phase = VpnPhase.ready;
+        notifyListeners();
       }
-      notifyListeners();
       return;
     }
     if (state == 'CONNECTED') {
-      phase = VpnPhase.connected;
+      if (phase != VpnPhase.connected) {
+        phase = VpnPhase.connected;
+        notifyListeners();
+      }
+      return;
     }
     if (state == 'DISCONNECTED' && phase == VpnPhase.connected) {
       final expired = session.isExpired ||
           session.remaining <= const Duration(seconds: 2);
       unawaited(disconnect(expired: expired));
-      return;
     }
-    notifyListeners();
   }
 
   @override

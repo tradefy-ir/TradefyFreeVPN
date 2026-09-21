@@ -16,6 +16,7 @@ final class VpnRuntime {
     static void reset(Context context) {
         Context app = context.getApplicationContext();
         try {
+            AppConfigs.ENABLE_TRAFFIC_AND_SPEED_STATICS = false;
             AppConfigs.V2RAY_STATE = AppConfigs.V2RAY_STATES.V2RAY_DISCONNECTED;
             AppConfigs.V2RAY_CONNECTION_MODE = AppConfigs.V2RAY_CONNECTION_MODES.VPN_TUN;
             V2rayController.StopV2ray(app);
@@ -32,5 +33,6 @@ final class VpnRuntime {
         }
         AppConfigs.V2RAY_STATE = AppConfigs.V2RAY_STATES.V2RAY_DISCONNECTED;
         AppConfigs.V2RAY_CONNECTION_MODE = AppConfigs.V2RAY_CONNECTION_MODES.VPN_TUN;
+        AppConfigs.ENABLE_TRAFFIC_AND_SPEED_STATICS = false;
     }
 }
