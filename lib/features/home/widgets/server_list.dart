@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tradefy_vpn/core/config/app_config.dart';
 import 'package:tradefy_vpn/core/theme/app_theme.dart';
 import 'package:tradefy_vpn/data/models/vpn_node.dart';
 import 'package:tradefy_vpn/state/vpn_controller.dart';
@@ -17,31 +18,93 @@ class ServerList extends StatelessWidget {
       (c) => c.showAsConnected,
     );
     final controller = context.read<VpnController>();
-    final visible = [...nodes]..sort((a, b) {
-      final aPing = a.pingMs > 0 ? a.pingMs : 1 << 30;
-      final bPing = b.pingMs > 0 ? b.pingMs : 1 << 30;
-      final ping = aPing.compareTo(bPing);
-      if (ping != 0) return ping;
-      return a.indexInCountry.compareTo(b.indexInCountry);
-    });
+    final special = [
+      ...nodes.where((node) => node.isSpecial),
+    ]..sort(_byPing);
+    final regular = [
+      ...nodes.where((node) => !node.isSpecial),
+    ]..sort(_byPing);
 
-    if (visible.isEmpty) {
+    if (special.isEmpty && regular.isEmpty) {
       return const Center(child: Text('سروری برای نمایش نیست'));
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: visible.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final node = visible[index];
-        return _NodeTile(
-          node: node,
-          selected: node.id == selectedId,
-          enabled: !connected,
-          onTap: () => controller.selectNode(node),
-        );
-      },
+    return CustomScrollView(
+      slivers: [
+        if (special.isNotEmpty) ...[
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: _SectionTitle(AppConfig.specialServersTitle),
+            ),
+          ),
+          _nodeSliver(special, selectedId, connected, controller),
+        ],
+        if (special.isNotEmpty && regular.isNotEmpty)
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
+        if (regular.isNotEmpty) ...[
+          if (special.isNotEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: _SectionTitle('سرورها'),
+              ),
+            ),
+          _nodeSliver(regular, selectedId, connected, controller),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+      ],
+    );
+  }
+
+  static SliverPadding _nodeSliver(
+    List<VpnNode> nodes,
+    String? selectedId,
+    bool connected,
+    VpnController controller,
+  ) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverList.separated(
+        itemCount: nodes.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final node = nodes[index];
+          return _NodeTile(
+            node: node,
+            selected: node.id == selectedId,
+            enabled: !connected,
+            onTap: () => controller.selectNode(node),
+          );
+        },
+      ),
+    );
+  }
+
+  static int _byPing(VpnNode a, VpnNode b) {
+    final aPing = a.pingMs > 0 ? a.pingMs : 1 << 30;
+    final bPing = b.pingMs > 0 ? b.pingMs : 1 << 30;
+    final ping = aPing.compareTo(bPing);
+    if (ping != 0) return ping;
+    return a.indexInCountry.compareTo(b.indexInCountry);
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(
+        color: AppTheme.accent,
+        fontWeight: FontWeight.w800,
+        fontSize: 14,
+        letterSpacing: 0.3,
+      ),
     );
   }
 }

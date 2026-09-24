@@ -40,6 +40,23 @@ void main() {
     expect(node.flag, isNotEmpty);
   });
 
+  test('special vpn node uses TradefyVpn and US flag', () {
+    const node = VpnNode(
+      id: 's1',
+      shareLink: 'vless://x',
+      configJson: '{}',
+      protocol: 'vless',
+      address: '1.1.1.1',
+      port: 443,
+      pingMs: 80,
+      countryCode: 'US',
+      country: 'United States',
+      isSpecial: true,
+    );
+    expect(node.displayName, 'TradefyVpn ${flagEmoji('US')}');
+    expect(node.flag, flagEmoji('US'));
+  });
+
   testWidgets('connect button shows remaining time when connected', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

@@ -24,36 +24,49 @@ class SubscriptionService {
   ];
 
   Future<List<VpnNode>> fetchNodes() async {
-    final collected = <String>[];
+    final specialLinks = await _fetchLinks(AppConfig.specialSubscriptionUrl);
+    final regularLinks = <String>[];
     for (final url in AppConfig.subscriptionUrls) {
-      try {
-        final response = await _client
-            .get(
-              Uri.parse(url),
-              headers: <String, String>{
-                'User-Agent': AppConfig.userAgent,
-                'Accept': 'text/plain,*/*',
-              },
-            )
-            .timeout(const Duration(seconds: 20));
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          continue;
-        }
-        collected.addAll(_extractShareLinks(decodeSubscriptionBody(response.body)));
-      } catch (_) {
-        continue;
-      }
+      regularLinks.addAll(await _fetchLinks(url));
     }
 
     final unique = <String>{};
     final nodes = <VpnNode>[];
-    for (final link in collected) {
-      final normalized = _normalizeLink(link);
-      if (!unique.add(normalized)) continue;
-      final node = _parseShareLink(link);
+    for (final link in specialLinks) {
+      final node = _addUnique(link, unique, special: true);
+      if (node != null) nodes.add(node);
+    }
+    for (final link in regularLinks) {
+      final node = _addUnique(link, unique, special: false);
       if (node != null) nodes.add(node);
     }
     return nodes;
+  }
+
+  Future<List<String>> _fetchLinks(String url) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse(url),
+            headers: <String, String>{
+              'User-Agent': AppConfig.userAgent,
+              'Accept': 'text/plain,*/*',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return const <String>[];
+      }
+      return _extractShareLinks(decodeSubscriptionBody(response.body));
+    } catch (_) {
+      return const <String>[];
+    }
+  }
+
+  VpnNode? _addUnique(String link, Set<String> unique, {required bool special}) {
+    final normalized = _normalizeLink(link);
+    if (!unique.add(normalized)) return null;
+    return _parseShareLink(link, special: special);
   }
 
   List<String> _extractShareLinks(String body) {
@@ -74,11 +87,15 @@ class SubscriptionService {
     return withoutFragment.trim();
   }
 
-  VpnNode? _parseShareLink(String link) {
+  VpnNode? _parseShareLink(String link, {required bool special}) {
     final sanitized = sanitizeShareLink(link);
     for (final candidate in <String>[sanitized, link]) {
       try {
-        return _parseCandidate(original: link, candidate: candidate);
+        return _parseCandidate(
+          original: link,
+          candidate: candidate,
+          special: special,
+        );
       } catch (_) {
         continue;
       }
@@ -86,8 +103,15 @@ class SubscriptionService {
     return null;
   }
 
-  VpnNode _parseCandidate({required String original, required String candidate}) {
-    final renamed = _withRemark(candidate, AppConfig.nodeDisplayName);
+  VpnNode _parseCandidate({
+    required String original,
+    required String candidate,
+    required bool special,
+  }) {
+    final remark = special
+        ? AppConfig.specialNodeDisplayName
+        : AppConfig.nodeDisplayName;
+    final renamed = _withRemark(candidate, remark);
     final parsed = V2ray.parseFromURL(renamed);
     parsed.inbound['port'] = 10808;
     final configJson = optimizeXrayConfig(
@@ -104,8 +128,9 @@ class SubscriptionService {
           : parsed.address,
       port: parsed.port,
       pingMs: AppConfig.delayFailureMs,
-      countryCode: '',
-      country: 'نامشخص',
+      countryCode: special ? 'US' : '',
+      country: special ? 'United States' : 'نامشخص',
+      isSpecial: special,
     );
   }
 

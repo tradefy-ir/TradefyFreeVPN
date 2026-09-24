@@ -44,6 +44,13 @@ class ProbeService {
   }
 
   List<VpnNode> numberNodes(List<VpnNode> nodes) {
+    return [
+      ..._numberGroup(nodes.where((node) => node.isSpecial)),
+      ..._numberGroup(nodes.where((node) => !node.isSpecial)),
+    ];
+  }
+
+  List<VpnNode> _numberGroup(Iterable<VpnNode> nodes) {
     final sorted = [...nodes]..sort((a, b) {
       final aPing = a.pingMs > 0 ? a.pingMs : 1 << 30;
       final bPing = b.pingMs > 0 ? b.pingMs : 1 << 30;

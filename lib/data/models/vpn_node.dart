@@ -14,6 +14,7 @@ class VpnNode {
     required this.countryCode,
     required this.country,
     this.indexInCountry = 1,
+    this.isSpecial = false,
   });
 
   final String id;
@@ -26,10 +27,13 @@ class VpnNode {
   final String countryCode;
   final String country;
   final int indexInCountry;
+  final bool isSpecial;
 
-  String get flag => flagEmoji(countryCode);
+  String get flag => flagEmoji(isSpecial ? 'US' : countryCode);
 
-  String get displayName => '${AppConfig.nodeDisplayName} #$indexInCountry';
+  String get displayName => isSpecial
+      ? '${AppConfig.specialNodeDisplayName} ${flagEmoji('US')}'
+      : '${AppConfig.nodeDisplayName} #$indexInCountry';
 
   String get pingLabel => pingMs > 0 ? '${pingMs}ms' : '—';
 
@@ -41,6 +45,7 @@ class VpnNode {
     String? country,
     int? indexInCountry,
     String? configJson,
+    bool? isSpecial,
   }) {
     return VpnNode(
       id: id,
@@ -53,6 +58,7 @@ class VpnNode {
       countryCode: countryCode ?? this.countryCode,
       country: country ?? this.country,
       indexInCountry: indexInCountry ?? this.indexInCountry,
+      isSpecial: isSpecial ?? this.isSpecial,
     );
   }
 
@@ -68,6 +74,7 @@ class VpnNode {
       'countryCode': countryCode,
       'country': country,
       'indexInCountry': indexInCountry,
+      'isSpecial': isSpecial,
     };
   }
 
@@ -83,6 +90,7 @@ class VpnNode {
       countryCode: json['countryCode'] as String,
       country: json['country'] as String,
       indexInCountry: json['indexInCountry'] as int? ?? 1,
+      isSpecial: json['isSpecial'] as bool? ?? false,
     );
   }
 }

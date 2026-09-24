@@ -50,14 +50,22 @@ class VpnController extends ChangeNotifier with WidgetsBindingObserver {
       _userWantsConnection && xray.isConnected && phase == VpnPhase.connected;
 
   List<VpnNode> get visibleNodes {
-    final list = [...nodes]..sort((a, b) {
+    return [...specialNodes, ...regularNodes];
+  }
+
+  List<VpnNode> get specialNodes => _sortedByPing(nodes.where((node) => node.isSpecial));
+
+  List<VpnNode> get regularNodes =>
+      _sortedByPing(nodes.where((node) => !node.isSpecial));
+
+  List<VpnNode> _sortedByPing(Iterable<VpnNode> source) {
+    return [...source]..sort((a, b) {
       final aPing = a.pingMs > 0 ? a.pingMs : 1 << 30;
       final bPing = b.pingMs > 0 ? b.pingMs : 1 << 30;
       final ping = aPing.compareTo(bPing);
       if (ping != 0) return ping;
       return a.indexInCountry.compareTo(b.indexInCountry);
     });
-    return list;
   }
 
   Timer? _sessionTicker;
